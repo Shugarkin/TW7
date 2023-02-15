@@ -1,8 +1,10 @@
 package service;
 import model.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.util.*;
 
 public class InMemoryTaskManager implements TaskManager {
 
@@ -13,33 +15,42 @@ public class InMemoryTaskManager implements TaskManager {
     protected HashMap<Integer, Epic> epics = new HashMap<>();
     protected HashMap<Integer, SubTask> subTasks = new HashMap<>();
 
+
     protected int nextId = 1;
 
-
     @Override
-    public void addTask(Task task) { //добавление задач
-        task.setId(nextId++);
-        tasks.put(task.getId(), task);
-
+    public void addTask(Task task){ //добавление задач
+            if(intersections(task)) {
+                task.setId(nextId++);
+                tasks.put(task.getId(), task);
+            } else {
+                System.out.println("Нельзя создать пересекающиеся задачи");
+            }
     }
     @Override
     public void addEpic(Epic epic) { //добаление эпиков
         epic.setId(nextId++);
         epics.put(epic.getId(), epic);
         epic.setStatus(String.valueOf(Status.NEW));
-
-
     }
     @Override
-    public void addSubTask(SubTask subTask) { //добавление сабзадач
-        if(epics.isEmpty()) {
-            throw  new NullPointerException("Список задач пуст");
+    public void addSubTask(SubTask subTask){ //добавление сабзадач
+        if(intersections(subTask)) {
+            if (epics.isEmpty()) {
+                throw new NullPointerException("Список задач пуст");
+            }
+            subTask.setId(nextId++);
+            subTasks.put(subTask.getId(), subTask);
+            int epicId = subTask.getEpicId();
+            epics.get(epicId).addSubTaskId(subTask.getId());
+            checkStatus(epicId);
+            if (subTask.startTime != null && subTask.duration != null) {
+                durationEpicCheck(epicId);
+                dateEpicCheck(epicId);
+            }
+        } else {
+            System.out.println("Нельзя создать пересекающиеся задачи");
         }
-        subTask.setId(nextId++);
-        subTasks.put(subTask.getId(), subTask);
-        int epicId = subTask.getEpicId();
-        epics.get(epicId).addSubTaskId(subTask.getId());
-        checkStatus(epicId);
     }
     @Override
     public void printAllTask() { // печатает все задачи
@@ -184,9 +195,7 @@ public class InMemoryTaskManager implements TaskManager {
     }
     @Override
     public void deleteTaskForId(int id) {//удаляет задачу по id
-        try {
-            tasks.containsKey(id);
-        } catch (NullPointerException e) {
+        if(!tasks.containsKey(id)){
             throw new NullPointerException("Задачи с таким id нет");
         }
         tasks.remove(id);
@@ -194,6 +203,9 @@ public class InMemoryTaskManager implements TaskManager {
     }
     @Override
     public void deleteEpicForId(int id) {//удаляет эпик по id
+        if(!epics.containsKey(id)){
+            throw new NullPointerException("Задачи с таким id нет");
+        }
         Epic epic = epics.get(id);
         if (!epic.getSubTaskId().isEmpty()) {
             for (Integer subTaskId : epic.getSubTaskId()) {
@@ -210,12 +222,15 @@ public class InMemoryTaskManager implements TaskManager {
     }
     @Override
     public void deleteSubTaskForId(int id) {//удаляет подзадачу по id
+        if(!subTasks.containsKey(id)){
+            throw new NullPointerException("Задачи с таким id нет");
+        }
         subTasks.remove(id);
         historyManager.remove(id);
     }
 
     @Override
-    public String checkStatus(int epicId) {
+    public String checkStatus(int epicId) {//метод для определения статуса эпика
         ArrayList<String> statusSubTask = new ArrayList<>();
         Epic epic = epics.get(epicId); //определенный эпик
         for (Integer subTaskId : epic.getSubTaskId()) {
@@ -228,35 +243,33 @@ public class InMemoryTaskManager implements TaskManager {
         } else {
             return epic.status = String.valueOf(Status.IN_PROGRESS);
         }
-
-
     }
 
     @Override
-    public HistoryManager getHistoryManager() {
+    public HistoryManager getHistoryManager() {//метод дает хистори менеджер
         return historyManager;
     }
     @Override
-    public Task getTask(Integer id) {
+    public Task getTask(Integer id) {//метод дает задачу
         Task task = tasks.get(id);
         historyManager.add(task);
         return tasks.get(id);
     }
     @Override
-    public Epic getEpic(Integer id) {
+    public Epic getEpic(Integer id) {//метод дает эпик
         Epic epic = epics.get(id);
         historyManager.add(epic);
         return epics.get(id);
     }
     @Override
-    public SubTask getSubTask(Integer id) {
+    public SubTask getSubTask(Integer id) {//метод дает подзадачу
         SubTask subTask = subTasks.get(id);
         historyManager.add(subTask);
         return subTasks.get(id);
     }
 
     @Override
-    public HashMap<Integer, Task> getTasks() {
+    public HashMap<Integer, Task> getTasks() {//метод дает список тасков
         if(tasks.isEmpty()) {
             throw new NullPointerException("Список задач пуст");
         }
@@ -264,18 +277,84 @@ public class InMemoryTaskManager implements TaskManager {
 
     }
     @Override
-    public HashMap<Integer, Epic> getEpics() {
+    public HashMap<Integer, Epic> getEpics() {//метод дает список эпиков
         if(epics.isEmpty()) {
             throw new NullPointerException("Список задач пуст");
         }
         return epics;
     }
     @Override
-    public HashMap<Integer, SubTask> getSubTasks() {
+    public HashMap<Integer, SubTask> getSubTasks() {//метод дает список подзадач
         if(subTasks.isEmpty()) {
             throw new NullPointerException("Список задач пуст");
         }
         return subTasks;
     }
+    @Override
+    public Duration durationEpicCheck(int epicId) { //метод для вычисления продолжительности эпика (не знаю зачем, но написал)
+        Duration durationEpic = Duration.ZERO;
+        Epic epic = epics.get(epicId);
+        for (Integer subtaskid : epic.getSubTaskId()) {
+            durationEpic.plus(subTasks.get(subtaskid).duration);
+        }
+        return epic.duration = durationEpic;
+    }
+    @Override
+    public Epic dateEpicCheck(int epicId) { //метод для определения временных рамок эпика
+        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime finish = LocalDateTime.of(1980, Month.JANUARY, 1, 00, 00);
 
+        Epic epic = epics.get(epicId);
+        for (Integer subtask : epic.getSubTaskId()) {
+            if(start.isAfter(subTasks.get(subtask).startTime)) {
+                start = subTasks.get(subtask).startTime;
+            }
+            if(finish.isBefore(subTasks.get(subtask).getEndTime())) {
+                finish = subTasks.get(subtask).getEndTime();
+            }
+        }
+        epic.startTime = start;
+        epic.endTime = finish;
+        return epic;
+    }
+    @Override
+    public TreeSet<Tasks> getPrioritizedTasks() { //метод для определения приоритета задач
+        Comparator<Tasks> comparator = (o1, o2) -> {
+            if(o1.getStartTime().isBefore(o2.getStartTime())) {
+                return -1;
+            } else {
+                return 1;
+            }
+        };
+       TreeSet<Tasks> prioritizedTasks = new TreeSet(comparator);
+
+        for (Task task : tasks.values()) {
+            prioritizedTasks.add(task);
+        }
+        for (Epic epic : epics.values()) {
+            if(epic.startTime != null) {
+                prioritizedTasks.add(epic);
+            }
+        }
+        for (SubTask subTask : subTasks.values()) {
+            prioritizedTasks.add(subTask);
+        }
+        return prioritizedTasks;
+    }
+
+    public boolean intersections(Tasks task) { //метод для определения пересечений
+        boolean answer = true;
+        if(!getPrioritizedTasks().isEmpty()) {
+            for (Tasks o : getPrioritizedTasks()) {
+                    if(task.startTime.isAfter(o.startTime) && task.startTime.isBefore(o.getEndTime())) {
+                        answer = false;
+                        if(task.getEndTime().isAfter(o.startTime) && task.getEndTime().isBefore(o.getEndTime())) {
+                            answer = false;
+                        }
+                    }
+                 }
+            }
+        return answer;
+        }
 }
+

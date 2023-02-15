@@ -3,26 +3,35 @@ import model.SubTask;
 import model.Task;
 import service.*;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.Month;
+
 public class Main {
 
     public static void main(String[] args) {
         TaskManager taskManager = Managers.getDefault();
 
-        taskManager.addTask(new Task("Наладить личную жизнь", "Tinder в помощь", "IN_PROGRESS"));
-
+        taskManager.addTask(new Task("Наладить личную жизнь", "Tinder в помощь", "IN_PROGRESS",
+        LocalDateTime.of(2023, Month.JANUARY,01,12,00), Duration.ofMinutes(30)));
 //        taskManager.addTask(new Task("Забыть бывшую", "Макс Корж ты где?", "IN_PROGRESS"));
+        Epic epic = new Epic("Прогулка", "Прогулка по парку");
+        taskManager.addEpic(epic);
 //
-//        taskManager.addEpic(new Epic("Прогулка", "Прогулка по парку"));
+        taskManager.addSubTask(new SubTask("Одеться", "Как без одежды то", "NEW",
+                LocalDateTime.of(2023, Month.JANUARY, 1, 12, 10), Duration.ofMinutes(30), 2));
+        taskManager.addSubTask(new SubTask("Выйти на улицу", "Дома же не погуляешь", "DONE",
+                LocalDateTime.of(2022, Month.JANUARY, 10, 12, 15), Duration.ofMinutes(60), 2));
+        taskManager.addSubTask(new SubTask("Я все таки смог", "Решить этот спринт", "DONE",
+                LocalDateTime.of(2023, Month.FEBRUARY, 10, 00, 00), Duration.ofMinutes(60),2));
 //
-//        taskManager.addSubTask(new SubTask("Одеться", "Как без одежды то", "NEW", 3));
-//        taskManager.addSubTask(new SubTask("Выйти на улицу", "Дома же не погуляешь", "DONE", 3));
-//        taskManager.addSubTask(new SubTask("Я все таки, вроде как, смог", "Решить этот спринт", "DONE", 3));
-//
-//        taskManager.addEpic(new Epic("Приборка дома", "Как бы грязно уже"));
+        taskManager.addEpic(new Epic("Приборка дома", "Как бы грязно уже"));
+//        System.out.println(epic.startTime + "\n" + epic.endTime);
 
+        System.out.println(taskManager.getPrioritizedTasks());
 //        taskManager.deleteTask();
-        System.out.println(taskManager.printTask(2));
-        taskManager.printAllTask();
+//        System.out.println(taskManager.printTask(2));
+//        taskManager.printAllTask();
 //        System.out.println(taskManager.printTask(2));
 //        System.out.println(taskManager.printEpic(3));
 //        System.out.println(taskManager.printSubTask(4));
@@ -34,7 +43,7 @@ public class Main {
 //        System.out.println(taskManager.printEpic(7));
 //        System.out.println(taskManager.printSubTask(5));
 //        System.out.println(taskManager.printSubTask(4));
-
+//            taskManager.deleteSubTaskForId(1);
 //        System.out.println(taskManager.getHistoryManager().getHistory().toString());
 //
 //        taskManager.deleteTaskForId(2);

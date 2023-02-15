@@ -4,16 +4,18 @@ import model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-import service.InMemoryTaskManager;
 import service.TaskManager;
 
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class TaskManagerTest {
-    TaskManager taskManager = new InMemoryTaskManager();
+abstract class TaskManagerTest<T extends TaskManager>  {
+    private T taskManager;
+
+    public void setTaskManager(T taskManager) {
+        this.taskManager = taskManager;
+    }
     private Executable generateExecutableForEmptyMapTask() {//метод для создания ошибки с пустым списком таска
         return () -> taskManager.getTasks();
     }
@@ -189,7 +191,7 @@ class TaskManagerTest {
     }
 
     @Test
-    public void printTaskTest() {
+    public void printTaskTest()  {
         NullPointerException e = Assertions.assertThrows(
                 NullPointerException.class,
                 generateExecutablePrintTask(1)
@@ -258,28 +260,119 @@ class TaskManagerTest {
                 NullPointerException.class,
                 generateExecutableForEmptyMapTask()
         );
-        Assertions.assertEquals(e.getMessage(), "Список задач пуст", "Задача не удаленна");
+        Assertions.assertEquals(e.getMessage(), "Список задач пуст", "Задачи не удаленны");
+    }
+
+    @Test
+    public void deleteEpicTest() {
+        taskManager.addEpic(new Epic("Эпик", "Для проверки"));
+        taskManager.deleteEpic();
+
+        NullPointerException e = Assertions.assertThrows(
+                NullPointerException.class,
+                generateExecutableForEmptyMapEpic()
+        );
+        Assertions.assertEquals(e.getMessage(), "Список задач пуст", "Задачи не удаленны");
+    }
+
+    @Test
+    public void deleteSubtaskTest() {
+        taskManager.addEpic(new Epic("Эпик", "Для проверки"));
+        taskManager.addSubTask(new SubTask("Подзадача", "Для проверки", "NEW", 1));
+        taskManager.deleteSubTask();
+
+        NullPointerException e = Assertions.assertThrows(
+                NullPointerException.class,
+                generateExecutableForEmptyMapSubtask()
+        );
+        Assertions.assertEquals(e.getMessage(), "Список задач пуст", "Задачи не удаленны");
     }
 
     @Test
     public void deleteTaskForIdTest() {
-        taskManager.addTask(new Task("Задача", "Для проверки", "NEW"));
-        taskManager.deleteTaskForId(2);
-
         NullPointerException ex = Assertions.assertThrows(
                 NullPointerException.class,
-                generateExecutableForEmptyMapTask()
+                generateExecutableDeleteForIdTask(2)
         );
-        Assertions.assertEquals(ex.getMessage(),"Список задач пуст", "Задача не удаленна по id");
+        Assertions.assertEquals(ex.getMessage(),"Задачи с таким id нет", "Задача не удаленна по id");
 
         taskManager.addTask(new Task("Задача", "Для проверки", "NEW"));
-        taskManager.deleteTaskForId(2);
 
         NullPointerException exp = Assertions.assertThrows(
                 NullPointerException.class,
                 generateExecutableDeleteForIdTask(2)
         );
         Assertions.assertEquals(exp.getMessage(), "Задачи с таким id нет");
+    }
+
+    @Test
+    public void deleteEpicForIdTest() {
+        NullPointerException ex = Assertions.assertThrows(
+                NullPointerException.class,
+                generateExecutableDeleteForIdEpic(2)
+        );
+        Assertions.assertEquals(ex.getMessage(),"Задачи с таким id нет", "Задача не удаленна по id");
+
+        taskManager.addEpic(new Epic("Эпик", "Для проверки"));
+
+        NullPointerException exp = Assertions.assertThrows(
+                NullPointerException.class,
+                generateExecutableDeleteForIdEpic(2)
+        );
+        Assertions.assertEquals(exp.getMessage(), "Задачи с таким id нет");
+    }
+
+    @Test
+    public void deleteSubtaskForIdTest() {
+        NullPointerException ex = Assertions.assertThrows(
+                NullPointerException.class,
+                generateExecutableDeleteForIdSubtask(2)
+        );
+        Assertions.assertEquals(ex.getMessage(),"Задачи с таким id нет", "Задача не удаленна по id");
+
+        taskManager.addEpic(new Epic("Эпик", "Для проверки"));
+        taskManager.addSubTask(new SubTask("Подзадача", "Для проверки", "NEW", 1));
+
+        NullPointerException exp = Assertions.assertThrows(
+                NullPointerException.class,
+                generateExecutableDeleteForIdSubtask(3)
+        );
+        Assertions.assertEquals(exp.getMessage(), "Задачи с таким id нет");
+    }
+
+
+    @Test
+    public void newTaskTest(){
+        taskManager.addTask(new Task("Задача", "Для проверки", "NEW"));
+        Task task = new Task("Задача 2", "Для проверки", "NEW");
+        taskManager.newTask(1,task);
+
+        final int taskId = task.getId();
+        final Task savedTask = taskManager.getTask(taskId);
+        Assertions.assertEquals(savedTask, task);
+    }
+
+    @Test
+    public void newEpicTest() {
+        taskManager.addEpic(new Epic("Эпик", "Для проверки"));
+        Epic epic = new Epic("Эпик 2", "Для проверки");
+        taskManager.newEpic(1, epic);
+
+        final int epicId = epic.getId();
+        final Epic savedEpic = taskManager.getEpic(epicId);
+        Assertions.assertEquals(savedEpic, epic);
+    }
+
+    @Test
+    public void newSubtaskTest(){
+        taskManager.addEpic(new Epic("Эпик", "Для проверки"));
+        taskManager.addSubTask(new SubTask("Подзадача", "Для проверки", "NEW", 1));
+        SubTask subTask1 = new SubTask("Подзадача 2", "Для проверки", "NEW", 1);
+        taskManager.newSubTask(2,subTask1);
+
+        final int subtaskId = subTask1.getId();
+        final SubTask savedSubtask = taskManager.getSubTask(subtaskId);
+        Assertions.assertEquals(savedSubtask, subTask1);
     }
 
 

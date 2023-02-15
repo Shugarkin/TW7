@@ -4,12 +4,12 @@ import model.Epic;
 import model.SubTask;
 import model.Task;
 
+import java.time.Duration;
 import java.util.HashMap;
+import java.util.TreeSet;
 
 public interface TaskManager {
     HistoryManager getHistoryManager();
-
-
     HashMap<Integer, Task> getTasks();
 
     HashMap<Integer, Epic> getEpics();
@@ -61,5 +61,11 @@ public interface TaskManager {
     Epic getEpic(Integer id);
 
     SubTask getSubTask(Integer id);
+
+    Duration durationEpicCheck(int epicId);
+
+    Epic dateEpicCheck(int epicId);
+
+    TreeSet getPrioritizedTasks();
 }
 
