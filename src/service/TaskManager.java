@@ -3,18 +3,18 @@ package service;
 import model.Epic;
 import model.SubTask;
 import model.Task;
+import model.Tasks;
 
-import java.util.HashMap;
+import java.util.List;
+import java.util.TreeSet;
 
 public interface TaskManager {
     HistoryManager getHistoryManager();
+    List<Task> getTasks();
 
+    List<Epic> getEpics();
 
-    HashMap<Integer, Task> getTasks();
-
-    HashMap<Integer, Epic> getEpics();
-
-    HashMap<Integer, SubTask> getSubTasks();
+    List<SubTask> getSubTasks();
 
     void addTask(Task task);
 
@@ -22,19 +22,19 @@ public interface TaskManager {
 
     void addSubTask(SubTask subTask);
 
-    void printAllTask();
+    Task printAllTask();
 
-    void printAllEpic();
+    Epic printAllEpic();
 
     void printAllSubTaskForEpic(int epicId);
 
-    void printAllSubTask();
+    SubTask printAllSubTask();
 
-    String printTask(Integer taskId);
+    Task printTask(Integer taskId);
 
-    String printEpic(Integer epicId);
+    Epic printEpic(Integer epicId);
 
-    String printSubTask(Integer subTaskId);
+    SubTask printSubTask(Integer subTaskId);
 
     void deleteTask();
 
@@ -44,9 +44,17 @@ public interface TaskManager {
 
     void newTask(int id, Task task);
 
+    void updateTask(int id, Task task);
+
+    void updateTask(Task task);
+
     void newEpic(int id, Epic epic);
 
+    void updateEpic(Epic epic);
+
     void newSubTask(int id, SubTask subTask);
+
+    void updateSubTask(SubTask subTask);
 
     void deleteTaskForId(int id);
 
@@ -54,12 +62,19 @@ public interface TaskManager {
 
     void deleteSubTaskForId(int id);
 
-    String checkStatus(int epicId);
+    void checkStatus(int epicId);
+
+    List<Tasks> getHistory();
 
     Task getTask(Integer id);
 
     Epic getEpic(Integer id);
 
     SubTask getSubTask(Integer id);
-}
 
+    void durationEpicCheck(int epicId);
+
+    Epic dateEpicCheck(int epicId);
+
+    TreeSet getPrioritizedTasks();
+}
